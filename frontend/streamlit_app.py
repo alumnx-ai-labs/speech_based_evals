@@ -60,6 +60,7 @@ def main():
 
 def display_results(data):
     transcription = data.get("transcription", "")
+    transcription_cost = data.get("transcription_cost", 0.0)
     evaluations = data.get("evaluations", [])
     total_cost = data.get("total_cost", 0.0)
     
@@ -69,6 +70,7 @@ def display_results(data):
     with col1:
         st.subheader("Transcription")
         st.info(transcription)
+        st.caption(f"**Transcription Cost:** ${transcription_cost:.5f}")
         
     with col2:
         st.subheader("Evaluations")
@@ -81,6 +83,20 @@ def display_results(data):
     # Total Cost at the bottom
     st.divider()
     st.metric("Total Cost", f"${total_cost:.5f}")
+
+    display_pricing_info()
+
+def display_pricing_info():
+    with st.expander("View Pricing Information"):
+        st.markdown("""
+        | Model | Provider | Input Price (per 1M tokens) | Output Price (per 1M tokens) | Notes |
+        |---|---|---|---|---|
+        | Gemini 2.5 Flash | Google | $0.30 | $2.50 | Optimized for high-throughput, low-latency, and multi-modal tasks. |
+        | Gemini 2.5 Flash-Lite | Google | $0.10 | $0.40 | The cheapest tier, built for high-volume, cost-sensitive text workloads. |
+        | GPT-5 (Standard) | OpenAI | $1.25 | $10.00 | The base model in the GPT-5 family. |
+        | GPT-5 mini | OpenAI | $0.25 | $2.00 | A more cost-effective option than the standard GPT-5. |
+        | GPT-5 nano | OpenAI | $0.05 | $0.40 | The lowest-cost option in the family, for ultra-cheap, latency-sensitive micro-tasks. |
+        """)
 
 if __name__ == "__main__":
     main()
