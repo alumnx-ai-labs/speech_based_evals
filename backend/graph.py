@@ -11,7 +11,7 @@ import audioread
 from backend.models import GraphState, EvaluationResult
 from backend.utils import (
     calculate_whisper_cost,
-    calculate_gpt4_cost,
+    calculate_gpt5_cost,
     calculate_gemini_cost
 )
 
@@ -46,11 +46,11 @@ def transcribe_node(state: GraphState):
                 model="whisper-1", 
                 file=audio_file
             )
-        
         text = transcript.text
         
         return {
             "transcription": text,
+            "transcription_cost": cost,
             "total_cost": state.get("total_cost", 0.0) + cost
         }
     except Exception as e:
@@ -61,8 +61,8 @@ def evaluate_gpt4_node(state: GraphState):
     if not transcription:
         return {}
     
-    llm = ChatOpenAI(model="gpt-5", temperature=0) # Using gpt-4o as proxy for gpt-4 for better perf/cost ratio usually, or stick to gpt-4 if strictly required.
-    # User asked for GPT-4. Let's stick to "gpt-4" or "gpt-4-turbo". "gpt-4o" is current best practice. I'll use gpt-4o.
+    llm = ChatOpenAI(model="gpt-5", temperature=0) # Using gpt-5 as requested
+    # User asked for GPT-5.
     
     messages = [
         SystemMessage(content=EVALUATION_SYSTEM_PROMPT),
@@ -72,11 +72,11 @@ def evaluate_gpt4_node(state: GraphState):
     response = llm.invoke(messages)
     
     # Extract token usage
-    usage = response.response_metadata.get("token_usage", {})
-    input_tokens = usage.get("prompt_tokens", 0)
-    output_tokens = usage.get("completion_tokens", 0)
+    usage = response.usage_metadata
+    input_tokens = usage.get("input_tokens", 0)
+    output_tokens = usage.get("output_tokens", 0)
     
-    cost = calculate_gpt4_cost(input_tokens, output_tokens)
+    cost = calculate_gpt5_cost(input_tokens, output_tokens)
     
     result = EvaluationResult(
         model_name="gpt-5",
@@ -87,15 +87,8 @@ def evaluate_gpt4_node(state: GraphState):
     )
     
     return {
-        "evaluations": [result], # LangGraph will merge this list if configured, or we need a reducer. 
-        # Actually standard StateGraph with TypedDict overwrites. We need a reducer for 'evaluations' if we want to append.
-        # But wait, I can just return the list and handle merging in the reducer or just use a custom reducer.
-        # For simplicity in TypedDict, I should probably read the existing list and append, but nodes receive the state.
-        # However, parallel nodes running at the same time might have race conditions if they both read/write the same key.
-        # LangGraph handles parallel branches by merging the updates.
-        # If both return "evaluations": [...], the default behavior for TypedDict state is usually "last write wins" or conflict.
-        # I need to use Annotated with a reducer for the list.
-        "total_cost": cost # This also needs a reducer to sum up.
+        "evaluations": [result], 
+        "total_cost": cost 
     }
 
 def evaluate_gemini_node(state: GraphState):
@@ -111,11 +104,9 @@ def evaluate_gemini_node(state: GraphState):
     
     response = llm.invoke(messages)
     
-    usage = response.response_metadata.get("usage_metadata", {})
-    input_tokens = usage.get("prompt_token_count", 0)
-    output_tokens = usage.get("candidates_token_count", 0) # Verify this key for Gemini
-    
-    # LangChain Google GenAI usage metadata keys: prompt_token_count, candidates_token_count, total_token_count
+    usage = response.usage_metadata
+    input_tokens = usage.get("input_tokens", 0)
+    output_tokens = usage.get("output_tokens", 0)
     
     cost = calculate_gemini_cost(input_tokens, output_tokens)
     
@@ -148,6 +139,7 @@ def reduce_cost(left: float, right: float) -> float:
 class GraphStateAnnotated(TypedDict):
     audio_path: str
     transcription: str
+    transcription_cost: Annotated[float, reduce_cost]
     evaluations: Annotated[list[EvaluationResult], reduce_evaluations]
     total_cost: Annotated[float, reduce_cost]
     errors: Annotated[list[str], operator.add]

@@ -32,6 +32,7 @@ async def process_audio(file: UploadFile = File(...)):
         initial_state = {
             "audio_path": temp_filename,
             "transcription": "",
+            "transcription_cost": 0.0,
             "evaluations": [],
             "total_cost": 0.0,
             "errors": []

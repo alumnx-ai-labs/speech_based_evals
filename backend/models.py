@@ -10,6 +10,7 @@ class EvaluationResult(TypedDict):
 class GraphState(TypedDict):
     audio_path: str
     transcription: Optional[str]
+    transcription_cost: float
     evaluations: List[EvaluationResult]
     total_cost: float
     errors: List[str]
