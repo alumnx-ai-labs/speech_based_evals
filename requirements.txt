@@ -1,0 +1,12 @@
+fastapi
+uvicorn
+python-multipart
+gradio
+langgraph
+langchain-openai
+langchain-google-genai
+python-dotenv
+openai
+requests
+audioread
+streamlit
