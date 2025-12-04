@@ -61,7 +61,7 @@ def evaluate_gpt4_node(state: GraphState):
     if not transcription:
         return {}
     
-    llm = ChatOpenAI(model="gpt-4o", temperature=0) # Using gpt-4o as proxy for gpt-4 for better perf/cost ratio usually, or stick to gpt-4 if strictly required.
+    llm = ChatOpenAI(model="gpt-5", temperature=0) # Using gpt-4o as proxy for gpt-4 for better perf/cost ratio usually, or stick to gpt-4 if strictly required.
     # User asked for GPT-4. Let's stick to "gpt-4" or "gpt-4-turbo". "gpt-4o" is current best practice. I'll use gpt-4o.
     
     messages = [
@@ -103,16 +103,7 @@ def evaluate_gemini_node(state: GraphState):
     if not transcription:
         return {}
     
-    llm = ChatGoogleGenerativeAI(model="gemini-2.5-flash", temperature=0) # User asked for gemini-2.5-flash? 
-    # "Gemini-2.5-flash" doesn't exist yet (as of my knowledge cutoff/current time). 
-    # User likely meant 1.5 Flash or 2.0 Flash (if released). 
-    # I will assume "gemini-2.5-flash" as it is the current flash model, or "gemini-2.0-flash-exp" if available.
-    # I'll stick to 1.5-flash for stability unless I see 2.5 explicitly mentioned in docs recently.
-    # Wait, user explicitly said "Gemini-2.5-flash". This might be a typo for 1.5 or a new model.
-    # I will try to use the string provided by user, but fallback to 1.5-flash if it fails?
-    # Actually, let's just use "gemini-2.5-flash" and note it, or maybe "gemini-2.0-flash-exp". 
-    # "2.5" is very specific. Maybe they mean 1.5? I'll use 1.5-flash and add a comment.
-    
+    llm = ChatGoogleGenerativeAI(model="gemini-2.5-flash", temperature=0) 
     messages = [
         SystemMessage(content=EVALUATION_SYSTEM_PROMPT),
         HumanMessage(content=f"Candidate Answer: {transcription}")
