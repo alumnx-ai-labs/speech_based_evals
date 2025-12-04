@@ -3,7 +3,14 @@ import requests
 import json
 
 # Configuration
-API_URL = "http://localhost:8000/process_audio"
+import os
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
+
+# Configuration
+API_URL = os.getenv("BACKEND_URL") or "http://localhost:8000"
 
 st.set_page_config(
     page_title="Audio Based Evaluator",
@@ -40,7 +47,7 @@ def main():
                     # st.audio_input returns a BytesIO-like object
                     files = {"file": ("audio.wav", audio_value, "audio/wav")}
                     
-                    response = requests.post(API_URL, files=files)
+                    response = requests.post(API_URL + "/process_audio" , files=files)
                     
                     if response.status_code != 200:
                         st.error(f"Error: {response.text}")
